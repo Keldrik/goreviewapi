@@ -8,12 +8,20 @@ import (
 	"goreviewapi/lib"
 	"log"
 	"net/http"
+	"strconv"
 )
 
-func Random(w http.ResponseWriter, r *http.Request) {
+func Listing(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
-	aggr := bson.D{{"$sample", bson.D{{"size", 9}}}}
-	cursor, err := lib.ReviewsCollection.Aggregate(ctx, mongo.Pipeline{aggr})
+	listingQuery, ok := r.URL.Query()["listing"]
+	if !ok || len(listingQuery[0]) < 1 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	listing, _ := strconv.Atoi(listingQuery[0])
+	aggr1 := bson.D{{"$match", bson.D{{"listingid", listing}}}}
+	aggr2 := bson.D{{"$sample", bson.D{{"size", 6}}}}
+	cursor, err := lib.ReviewsCollection.Aggregate(ctx, mongo.Pipeline{aggr1, aggr2})
 	if err != nil {
 		log.Fatal(err)
 	}
