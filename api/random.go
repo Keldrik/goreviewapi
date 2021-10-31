@@ -6,26 +6,29 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"goreviewapi/lib"
-	"log"
 	"net/http"
 )
 
 func Random(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
-	aggr := bson.D{{"$sample", bson.D{{"size", 9}}}}
+	length := lib.GetLengthQuery(r)
+	aggr := bson.D{{"$sample", bson.D{{"size", length}}}}
 	cursor, err := lib.ReviewsCollection.Aggregate(ctx, mongo.Pipeline{aggr})
 	if err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	var result []lib.Review
 	if err = cursor.All(ctx, &result); err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonResp, err := json.Marshal(result)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	jsonResp, err := json.Marshal(result)
-	if err != nil {
-		log.Fatal(err)
-	}
 	w.Write(jsonResp)
 }
