@@ -12,8 +12,9 @@ import (
 func Random(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
 	length := lib.GetLengthQuery(r)
-	aggr := bson.D{{"$sample", bson.D{{"size", length}}}}
-	cursor, err := lib.ReviewsCollection.Aggregate(ctx, mongo.Pipeline{aggr})
+	aggr1 := bson.D{{"$match", bson.D{{"review", bson.D{{"$exists", true}}}}}}
+	aggr2 := bson.D{{"$sample", bson.D{{"size", length}}}}
+	cursor, err := lib.ReviewsCollection.Aggregate(ctx, mongo.Pipeline{aggr1, aggr2})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -28,7 +29,6 @@ func Random(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonResp)
 }
